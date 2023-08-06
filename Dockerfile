@@ -1,27 +1,24 @@
-# Use an official Python runtime as a parent image
-FROM python:3.7-slim
+# Base image
+FROM ghcr.io/swuecho/chat:latest
 
-# Set the working directory to /app
-WORKDIR /app
-
-# Copy the current directory contents into the container at /app
-COPY . /app
-
-# Install any needed packages specified in requirements.txt
-RUN pip install --trusted-host pypi.python.org -r requirements.txt
-
-# Make port 8080 available to the world outside this container
+# Expose port 8080
 EXPOSE 8080
 
-# Define environment variable
-ENV OPENAI_API_KEY=thisisopenaikey 
-ENV CLAUDE_API_KEY=thisisclaudekey 
-ENV OPENAI_RATELIMIT=100 
+# Set environment variables
+ENV OPENAI_API_KEY=thisisopenaikey
+ENV CLAUDE_API_KEY=thisisclaudekey
+ENV OPENAI_RATELIMIT=100
 ENV PG_HOST=db
-ENV PG_DB=postgres 
+ENV PG_DB=postgres
 ENV PG_USER=postgres
 ENV PG_PASS=thisisapassword
 ENV PG_PORT=5432
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Install any additional dependencies if required
+
+# Set up healthcheck for the database
+HEALTHCHECK --interval=5s --timeout=5s --retries=5 \
+  CMD pg_isready -q -d postgres -U postgres
+
+# Start the application
+CMD ["/app/start.sh"]
