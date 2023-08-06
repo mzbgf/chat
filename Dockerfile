@@ -1,41 +1,27 @@
-FROM node:16 as frontend_builder
+# Use an official Python runtime as a parent image
+FROM python:3.7-slim
 
 # Set the working directory to /app
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files to the container
-COPY web/package*.json ./
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Install dependencies
-RUN npm install
+# Install any needed packages specified in requirements.txt
+RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Copy the remaining application files to the container
-COPY web/ .
-# Build the application
-RUN npm run build
-
-FROM golang:1.19-alpine3.16 AS builder
-
-WORKDIR /app
-
-COPY api/go.mod api/go.sum ./
-RUN go mod download
-
-COPY api/ .
-# cp -rf /app/dist/* /app/static/
-COPY --from=frontend_builder /app/dist/ ./static/
-
-RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -a -installsuffix cgo -o /app/app
-
-FROM alpine:3.16
-
-WORKDIR /app
-
-COPY --from=builder /app/app /app
-# for go timezone work
-COPY --from=builder /usr/local/go/lib/time/zoneinfo.zip /app/zoneinfo.zip
-ENV ZONEINFO=/app/zoneinfo.zip 
-
+# Make port 8080 available to the world outside this container
 EXPOSE 8080
 
-ENTRYPOINT ["/app/app"]
+# Define environment variable
+ENV OPENAI_API_KEY=thisisopenaikey 
+ENV CLAUDE_API_KEY=thisisclaudekey 
+ENV OPENAI_RATELIMIT=100 
+ENV PG_HOST=db
+ENV PG_DB=postgres 
+ENV PG_USER=postgres
+ENV PG_PASS=thisisapassword
+ENV PG_PORT=5432
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
